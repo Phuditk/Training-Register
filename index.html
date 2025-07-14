@@ -62,7 +62,7 @@
         const result = await res.json();
 
         if (result.success) {
-          status.textContent = `✅ ลงทะเบียนเรียบร้อยแล้ว (คนที่ ${result.count}/60)`;
+          status.textContent = `✅ ลงทะเบียนเรียบร้อยแล้ว (คนที่ ${result.count}/71)`;
           form.reset();
         } else {
           status.textContent = '⚠️ คุณเคยลงทะเบียนแล้ว';
