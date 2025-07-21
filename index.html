@@ -8,8 +8,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Prompt&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Prompt', sans-serif; }
-        /* Tailwind CSS classes should handle most styling */
-
+        
         /* Custom styles for status messages and table display */
         .assigned-table-display {
             font-size: 1.25rem; /* text-xl */
@@ -20,23 +19,39 @@
             padding-bottom: 0.5rem;
         }
         
+        /* Styles for status messages - using Tailwind CSS colors */
+        #status {
+            padding: 0.5rem;
+            border-radius: 0.5rem;
+            margin-top: 1rem; /* Adjust margin as needed */
+            display: none; /* Hidden by default */
+            transition: opacity 0.3s ease-in-out; /* Smooth transition */
+            opacity: 0; /* Start hidden for transition */
+        }
+        #status.visible {
+            opacity: 1; /* Show when visible */
+        }
         #status.success {
             color: #15803d; /* dark green */
             background-color: #dcfce7; /* light green */
-            padding: 0.5rem;
-            border-radius: 0.5rem;
-            display: block; /* ensure it takes up space */
         }
         #status.error {
             color: #be123c; /* dark red */
             background-color: #fee2e2; /* light red */
-            padding: 0.5rem;
-            border-radius: 0.5rem;
-            display: block; /* ensure it takes up space */
         }
-        /* Default status display to hidden */
-        #status, #assignedTableDisplay {
-            display: none;
+        #status.loading { /* Style for "กำลังส่งข้อมูล..." */
+            color: #4a5568; /* gray-700 */
+            background-color: #edf2f7; /* gray-200 */
+        }
+
+        /* Default assignedTableDisplay to hidden */
+        #assignedTableDisplay {
+            display: none; /* Hidden by default */
+            opacity: 0;
+            transition: opacity 0.3s ease-in-out;
+        }
+        #assignedTableDisplay.visible {
+            opacity: 1;
         }
     </style>
 </head>
@@ -63,27 +78,27 @@
         </div>
 
         <form id="regForm" class="space-y-4">
-            <input name="firstName" placeholder="ชื่อ" required class="w-full p-2 border rounded-xl">
-            <input name="lastName" placeholder="นามสกุล" required class="w-full p-2 border rounded-xl">
-            <input name="empID" placeholder="รหัสพนักงาน" required class="w-full p-2 border rounded-xl">
-            <select name="position" required class="w-full p-2 border rounded-xl">
+            <input name="firstName" placeholder="ชื่อ" required class="w-full p-2 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+            <input name="lastName" placeholder="นามสกุล" required class="w-full p-2 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+            <input name="empID" placeholder="รหัสพนักงาน" required class="w-full p-2 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+            <select name="position" required class="w-full p-2 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                 <option value="" disabled selected>เลือกตำแหน่ง</option>
                 <option value="เจ้าหน้าที่บริการ">เจ้าหน้าที่สาขา</option>
                 <option value="ผู้บริหารสาขา">ผู้บริหารสาขา</option>
                 <option value="ผู้สังเกตุการณ์">ผู้สังเกตการณ์</option>
                 <option value="เจ้าหน้าที่ฝ่ายสนับสนุน">เจ้าหน้าที่ฝ่ายสนับสนุน</option>
             </select>
-            <input name="phone" placeholder="เบอร์โทรศัพท์" required class="w-full p-2 border rounded-xl">
-            <input name="email" placeholder="อีเมล" type="email" required class="w-full p-2 border rounded-xl">
-            <button type="submit" class="w-full bg-blue-700 text-white py-2 rounded-xl hover:bg-blue-800">
+            <input name="phone" placeholder="เบอร์โทรศัพท์" required class="w-full p-2 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+            <input name="email" placeholder="อีเมล" type="email" required class="w-full p-2 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+            <button type="submit" class="w-full bg-blue-700 text-white py-2 rounded-xl hover:bg-blue-800 transition-colors duration-200">
                 ลงทะเบียน
             </button>
         </form>
 
-        <p id="status" class="text-center text-sm mt-4"></p>
+        <p id="status" class="text-center text-sm"></p>
         <p id="assignedTableDisplay" class="assigned-table-display"></p>
 
-        <button type="button" onclick="toggleTable()" class="w-full mt-2 bg-gray-100 text-blue-700 py-2 rounded-xl hover:bg-gray-200">
+        <button type="button" onclick="toggleTable()" class="w-full mt-2 bg-gray-100 text-blue-700 py-2 rounded-xl hover:bg-gray-200 transition-colors duration-200">
             📋 ดูรายชื่อผู้ลงทะเบียน
         </button>
 
@@ -93,10 +108,10 @@
                 <table class="min-w-full text-sm text-left text-gray-700">
                     <thead class="bg-blue-100 text-gray-700 font-semibold">
                         <tr>
-                            <th class="px-4 py-2">ชื่อ</th>
-                            <th class="px-4 py-2">ตำแหน่ง</th>
-                            <th class="px-4 py-2">เวลา</th>
-                            <th class="px-4 py-2">โต๊ะ</th> </tr>
+                            <th class="px-4 py-2 whitespace-nowrap">ชื่อ-นามสกุล</th>
+                            <th class="px-4 py-2 whitespace-nowrap">ตำแหน่ง</th>
+                            <th class="px-4 py-2 whitespace-nowrap">เวลา</th>
+                            <th class="px-4 py-2 whitespace-nowrap">โต๊ะ/ที่นั่ง</th> </tr>
                     </thead>
                     <tbody id="nameTable" class="bg-white divide-y divide-gray-200"></tbody>
                 </table>
@@ -105,47 +120,57 @@
     </div>
 
     <script>
-        // *** สำคัญ: ตรวจสอบว่า URL นี้คือ URL ของ Web App ล่าสุดของคุณ ***
-        const url = 'https://script.google.com/macros/s/AKfycbwVHZmdqXz2quEiB4diLYzY0xkS8cuMaihhL7x39oA_C2TfM3YlsYF4G2RR_evA33cy/exec'; 
+        // *** สำคัญ: แทนที่ด้วย URL ของ Google Apps Script Web App ล่าสุดของคุณ ***
+        const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwVHZmdqXz2quEiB4diLYzY0xkS8cuMaihhL7x39oA_C2TfM3YlsYF4G2RR_evA33cy/exec'; 
         
         const form = document.getElementById('regForm');
         const statusDisplay = document.getElementById('status');
         const assignedTableDisplay = document.getElementById('assignedTableDisplay');
 
-        // Helper function to show status messages
+        // Helper function to show status messages with animations
         function showStatus(message, type, table = null) {
             statusDisplay.textContent = message;
-            statusDisplay.className = `text-center text-sm mt-4 ${type}`;
-            statusDisplay.style.display = 'block'; // Show status div
+            statusDisplay.className = `text-center text-sm ${type}`; // Apply type class
+            statusDisplay.classList.add('visible'); // Trigger fade-in animation
+            statusDisplay.style.display = 'block'; // Ensure it's displayed
 
             if (table && type === 'success') {
                 assignedTableDisplay.textContent = `โต๊ะ/ที่นั่งของคุณคือ: ${table}`;
-                assignedTableDisplay.style.display = 'block'; // Show table display div
+                assignedTableDisplay.classList.add('visible'); // Trigger fade-in
+                assignedTableDisplay.style.display = 'block'; // Ensure displayed
             } else {
-                assignedTableDisplay.style.display = 'none'; // Hide table display div
+                assignedTableDisplay.classList.remove('visible'); // Trigger fade-out
+                // Use a timeout to hide after transition
+                setTimeout(() => { assignedTableDisplay.style.display = 'none'; }, 300); 
             }
 
             // Automatically hide after 5 seconds
             setTimeout(() => {
-                statusDisplay.style.display = 'none';
-                assignedTableDisplay.style.display = 'none';
+                statusDisplay.classList.remove('visible'); // Trigger fade-out
+                assignedTableDisplay.classList.remove('visible'); // Trigger fade-out for table
+                setTimeout(() => { 
+                    statusDisplay.style.display = 'none'; 
+                    assignedTableDisplay.style.display = 'none'; 
+                }, 300); // Hide after transition
             }, 5000);
         }
 
+        // Function to update summary statistics
         function updateSummary() {
-            fetch(url)
+            fetch(WEB_APP_URL)
                 .then(res => {
                     if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
                     return res.json();
                 })
                 .then(data => {
                     const total = data.list.length;
-                    const max = 71; 
+                    const max = 71; // Max participants
+                    // Get latest timestamp directly from the first item if available
                     const latest = data.list.length > 0 ? data.list[0].timestamp : '-'; 
                     let positions = {};
 
                     data.list.forEach(entry => {
-                        if (entry.position) {
+                        if (entry.position) { // Ensure position exists
                             positions[entry.position] = (positions[entry.position] || 0) + 1;
                         }
                     });
@@ -154,52 +179,55 @@
                     document.getElementById("summaryBar").style.width = `${(total / max) * 100}%`;
                     document.getElementById("latestTime").textContent = latest;
 
+                    // Generate position summary list
                     const positionList = Object.entries(positions)
                         .map(([pos, count]) => `<li>${pos}: ${count} คน</li>`).join("");
                     document.getElementById("positionSummary").innerHTML = positionList;
                 })
                 .catch(err => {
-                    console.error("สรุปผลล้มเหลว:", err);
-                    // Optionally display a message on the summary section
+                    console.error("Failed to load summary:", err);
                     document.getElementById("summaryCount").textContent = `ไม่สามารถโหลดข้อมูลสรุปได้`;
                 });
         }
 
+        // Run summary update on page load
         document.addEventListener("DOMContentLoaded", updateSummary);
 
+        // Form submission handler
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
-            showStatus('กำลังส่งข้อมูล...', 'text-gray-700'); // Use generic text color for loading
+            showStatus('กำลังส่งข้อมูล...', 'loading'); // Show loading status
             const submitButton = form.querySelector('button[type="submit"]');
-            submitButton.disabled = true; // Disable button during submission
+            submitButton.disabled = true; // Disable button
 
             const formData = new FormData(form);
             const data = Object.fromEntries(formData.entries());
-            data.timestamp = new Date().toISOString(); // Send ISO string for consistent parsing in Apps Script
+            // Format timestamp to be readable for humans when stored in Google Sheet
+            data.timestamp = new Date().toLocaleString('th-TH'); 
 
             try {
-                const res = await fetch(url, {
+                const res = await fetch(WEB_APP_URL, {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'text/plain;charset=utf-8', // Crucial for Apps Script to parse JSON from body
+                        'Content-Type': 'text/plain;charset=utf-8', // Important for Apps Script to parse JSON body
                     },
                     body: JSON.stringify(data),
                 });
                 
-                if (!res.ok) { // Check for HTTP errors (e.g., 404, 500)
+                if (!res.ok) { // Check for HTTP errors
                     const errorText = await res.text();
                     throw new Error(`Server responded with status ${res.status}: ${errorText}`);
                 }
 
-                const result = await res.json();
+                const result = await res.json(); // Parse JSON response
 
                 if (result.success) {
-                    showStatus(result.message, 'success', result.table); // Use message and table from Apps Script
-                    form.reset();
-                    updateSummary(); // Refresh summary
-                    toggleTable(true); // Force refresh of the table if open
+                    showStatus(result.message, 'success', result.table); // Display success message and table
+                    form.reset(); // Clear form fields
+                    updateSummary(); // Refresh summary statistics
+                    toggleTable(true); // Force refresh of the participant list if open
                 } else {
-                    showStatus(result.message, 'error'); // Show error message from Apps Script
+                    showStatus(result.message, 'error'); // Display error message from Apps Script
                 }
             } catch (error) {
                 console.error("Error during submission:", error);
@@ -209,45 +237,47 @@
             }
         });
 
+        // Toggle visibility of the participant list table
         function toggleTable(forceRefresh = false) {
             const section = document.getElementById("tableSection");
             const nameTable = document.getElementById("nameTable");
 
-            // Toggle visibility
+            // Toggle hidden class to show/hide the section
             section.classList.toggle("hidden");
 
-            // Load data if section is visible AND (not loaded OR forceRefresh is true)
+            // Load data if section is now visible AND (not loaded yet OR forceRefresh is true)
             if (!section.classList.contains("hidden") && (!section.classList.contains("loaded") || forceRefresh)) {
                 nameTable.innerHTML = `<tr><td colspan="4" class="text-center py-2 text-blue-500">กำลังโหลดข้อมูล...</td></tr>`;
-                fetch(url)
+                fetch(WEB_APP_URL)
                     .then(res => {
                         if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
                         return res.json();
                     })
                     .then(data => {
-                        nameTable.innerHTML = ""; // Clear table body
+                        nameTable.innerHTML = ""; // Clear existing table rows
                         if (data.list && data.list.length > 0) {
                             data.list.forEach(item => {
                                 nameTable.innerHTML += `
                                     <tr>
-                                        <td class="px-4 py-1">${item.name || ''}</td>
-                                        <td class="px-4 py-1">${item.position || ''}</td>
-                                        <td class="px-4 py-1">${item.timestamp || ''}</td>
-                                        <td class="px-4 py-1">${item.assignedTable || '-'}</td>
+                                        <td class="px-4 py-1 whitespace-nowrap">${item.name || ''}</td>
+                                        <td class="px-4 py-1 whitespace-nowrap">${item.position || ''}</td>
+                                        <td class="px-4 py-1 whitespace-nowrap">${item.timestamp || ''}</td> 
+                                        <td class="px-4 py-1 whitespace-nowrap">${item.assignedTable || '-'}</td>
                                     </tr>
                                 `;
                             });
                         } else {
                             nameTable.innerHTML = `<tr><td colspan="4" class="text-center py-2 text-gray-500">ยังไม่มีผู้ลงทะเบียน</td></tr>`;
                         }
-                        section.classList.add("loaded"); // Mark as loaded
+                        section.classList.add("loaded"); // Mark section as loaded
                     })
                     .catch(err => {
                         console.error("Failed to load table data:", err);
                         nameTable.innerHTML = `<tr><td colspan="4" class="text-center py-2 text-red-500">❌ โหลดข้อมูลไม่สำเร็จ</td></tr>`;
                     });
             } else if (section.classList.contains("hidden")) {
-                section.classList.remove("loaded"); // If hiding, remove loaded state to force refresh next time
+                // If section is being hidden, remove the 'loaded' class so it reloads next time it's shown
+                section.classList.remove("loaded"); 
             }
         }
     </script>
