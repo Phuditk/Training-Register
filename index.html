@@ -116,7 +116,7 @@
 
         // Function สำหรับพูดข้อความ
         function speakConfirmation(firstName, lastName, table) {
-            if ('speechSynthesis' in window) { // ตรวจสอบว่าเบราว์เซอร์รองรับหรือไม่
+            if ('speechSynthesis' in window) {
                 const utterance = new SpeechSynthesisUtterance();
                 utterance.lang = 'th-TH'; // กำหนดภาษาเป็นไทย
                 utterance.text = `คุณ${firstName} ${lastName} ลงทะเบียนเรียบร้อยแล้วค่ะ โต๊ะ/ที่นั่งของคุณคือหมายเลข ${table} ค่ะ`;
@@ -130,7 +130,20 @@
                     console.warn("ไม่พบเสียงภาษาไทย ใช้เสียงเริ่มต้นแทน");
                 }
 
-                speechSynthesis.speak(utterance);
+                // *** สำคัญ: พยายามเล่นเสียง และจัดการกรณีที่เล่นไม่ได้ ***
+                try {
+                    speechSynthesis.speak(utterance);
+                } catch (error) {
+                    console.error("Error speaking:", error);
+                    // อาจแสดงข้อความแนะนำผู้ใช้เพิ่มเติมที่นี่
+                    // เช่น ถ้าเสียงไม่ดัง ลองเพิ่มเสียงมีเดีย หรือแตะที่หน้าจอ
+                    showStatus("เสียงไม่ดัง? กรุณาตรวจสอบปุ่มปรับเสียงของมือถือ หรือแตะที่หน้าจอเพื่อเปิดใช้งานเสียง.", "error");
+                }
+
+                // สำหรับเบราว์เซอร์บางตัวที่อาจต้องรอโหลดเสียงก่อน
+                // utterance.onend = () => { console.log("Speech finished"); };
+                // utterance.onerror = (event) => { console.error("Speech error:", event.error); };
+
             } else {
                 console.warn("เบราว์เซอร์ของคุณไม่รองรับ Speech Synthesis API");
             }
@@ -151,6 +164,7 @@
                 setTimeout(() => { assignedTableDisplay.style.display = 'none'; }, 300); 
             }
 
+            // ข้อความสถานะจะหายไปเอง
             setTimeout(() => {
                 statusDisplay.classList.remove('visible');
                 assignedTableDisplay.classList.remove('visible');
@@ -158,7 +172,7 @@
                     statusDisplay.style.display = 'none'; 
                     assignedTableDisplay.style.display = 'none'; 
                 }, 300);
-            }, 5000);
+            }, 5000); // ข้อความสถานะหายไปใน 5 วินาที
         }
 
         function updateSummary() {
@@ -211,15 +225,20 @@
                 const result = await res.json();
 
                 if (result.success) {
+                    // แสดงผลบนหน้าจอ
                     showStatus(result.message, 'success', result.table); 
                     form.reset();
                     updateSummary();
                     toggleTable(true);
                     
                     // *** เรียกใช้ฟังก์ชันพูดแจ้งเมื่อลงทะเบียนสำเร็จ ***
-                    if (result.firstName && result.lastName && result.table) {
-                        speakConfirmation(result.firstName, result.lastName, result.table);
-                    }
+                    // ใช้ setTimeout เพื่อให้แน่ใจว่าการแสดงผลบน UI เสร็จสิ้นก่อน
+                    setTimeout(() => {
+                        if (result.firstName && result.lastName && result.table) {
+                            speakConfirmation(result.firstName, result.lastName, result.table);
+                        }
+                    }, 100); // หน่วงเวลาเล็กน้อย
+                    
 
                 } else {
                     showStatus(result.message, 'error');
