@@ -142,11 +142,12 @@
                 </table>
             </div>
         </div>
-    </div>
 
-    <footer class="mt-8 text-center text-gray-500 text-xs">
-        &copy; <span id="currentYear"></span> P้hudit-kat. All rights reserved.
-    </footer>
+        <footer class="mt-6 text-center text-gray-500 text-xs">
+            &copy; <span id="currentYear"></span> Phudit_Kat. All rights reserved.
+        </footer>
+        </div>
+
     <script>
         // *** สำคัญ: แทนที่ด้วย URL ของ Google Apps Script Web App ล่าสุดของคุณ ***
         const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbyRNJACyL4JE00hIas5n0GYxF_E9t2BolpG7IzsdKnsk-eThp8U3gb2XDZQ4E4Cf5id/exec'; 
@@ -237,6 +238,7 @@
 
 
         function updateSummary() {
+            // *** แก้ไข: เพิ่ม ?action=getData สำหรับ doGet ใน Apps Script ***
             fetch(WEB_APP_URL + '?action=getData')
                 .then(res => {
                     if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
@@ -246,6 +248,7 @@
                     const total = data.list.length;
                     const max = 71;
                     
+                    // ใช้ formatThaiBuddhistDate สำหรับ latestTime
                     const latest = data.list.length > 0 && data.list[0].timestamp 
                                 ? formatThaiBuddhistDate(data.list[0].timestamp) 
                                 : '-'; 
@@ -276,6 +279,7 @@
             const data = Object.fromEntries(formData.entries());
             
             try {
+                // POST request ไม่ต้องมี ?action=getData
                 const res = await fetch(WEB_APP_URL, { 
                     method: 'POST',
                     headers: {
@@ -295,6 +299,7 @@
                     showStatus(result.message, 'success', result.table); 
                     form.reset();
                     updateSummary();
+                    // บังคับรีเฟรชตารางหลังจากลงทะเบียนสำเร็จ
                     toggleTable(true); 
                     
                     setTimeout(() => {
@@ -323,6 +328,7 @@
 
             if (!section.classList.contains("hidden") && (!section.classList.contains("loaded") || forceRefresh)) {
                 nameTable.innerHTML = `<tr><td colspan="3" class="text-center py-2 text-blue-500">กำลังโหลดข้อมูล...</td></tr>`; 
+                // *** แก้ไข: เพิ่ม ?action=getData สำหรับ doGet ใน Apps Script ***
                 fetch(WEB_APP_URL + '?action=getData')
                     .then(res => {
                         if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
@@ -332,6 +338,7 @@
                         nameTable.innerHTML = "";
                         if (data.list && data.list.length > 0) {
                             data.list.forEach(item => {
+                                // ใช้ formatThaiBuddhistDate สำหรับ displayTime ในตาราง
                                 const displayTime = formatThaiBuddhistDate(item.timestamp);
 
                                 nameTable.innerHTML += `
