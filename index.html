@@ -1,4 +1,179 @@
-<script>
+<!DOCTYPE html>
+<html>
+<head>
+    <base target="_top">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบลงทะเบียนผู้เข้าร่วม</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Prompt', sans-serif;
+            background-color: #f0f4f8; /* Light blue-gray background */
+        }
+        .container {
+            max-width: 600px;
+        }
+        .form-input {
+            border: 1px solid #cbd5e1; /* border-gray-300 */
+            padding: 0.75rem 1rem;
+            border-radius: 0.375rem; /* rounded-md */
+            width: 100%;
+            background-color: #ffffff;
+        }
+        .form-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500; /* font-medium */
+            color: #334155; /* slate-700 */
+        }
+        .btn-primary {
+            background-color: #3b82f6; /* blue-500 */
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.375rem;
+            font-weight: 600; /* font-semibold */
+            transition: background-color 0.2s;
+        }
+        .btn-primary:hover {
+            background-color: #2563eb; /* blue-600 */
+        }
+        .btn-primary:disabled {
+            background-color: #93c5fd; /* blue-300 */
+            cursor: not-allowed;
+        }
+        .status-message {
+            padding: 0.75rem 1rem;
+            border-radius: 0.375rem;
+            margin-top: 1rem;
+            transition: opacity 0.3s ease-in-out;
+            opacity: 0;
+            max-height: 0;
+            overflow: hidden;
+        }
+        .status-message.visible {
+            opacity: 1;
+            max-height: 100px; /* Allow height to transition */
+        }
+        .status-message.success {
+            background-color: #d1fae5; /* green-100 */
+            color: #065f46; /* green-700 */
+        }
+        .status-message.error {
+            background-color: #fee2e2; /* red-100 */
+            color: #b91c1c; /* red-700 */
+        }
+        .status-message.loading {
+            background-color: #bfdbfe; /* blue-200 */
+            color: #1e40af; /* blue-800 */
+        }
+        .text-center {
+            text-align: center;
+        }
+        .text-sm {
+            font-size: 0.875rem; /* text-sm */
+        }
+        .summary-bar {
+            height: 8px;
+            background-color: #dbeafe; /* blue-100 */
+            border-radius: 9999px; /* rounded-full */
+            overflow: hidden;
+            margin-top: 0.5rem;
+        }
+        .summary-bar-fill {
+            height: 100%;
+            background-color: #3b82f6; /* blue-500 */
+            width: 0%; /* Initial width */
+            border-radius: 9999px;
+            transition: width 0.5s ease-in-out;
+        }
+        .hidden {
+            display: none;
+        }
+        .table-auto {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .table-auto th, .table-auto td {
+            border: 1px solid #e2e8f0; /* border-gray-200 */
+            padding: 8px;
+            text-align: left;
+        }
+        .table-auto th {
+            background-color: #e0f2fe; /* blue-50 */
+            font-weight: 600;
+        }
+        .table-wrapper {
+            max-height: 400px; /* กำหนดความสูงสูงสุดของตาราง */
+            overflow-y: auto; /* ทำให้ตาราง scroll ได้ */
+            margin-top: 1rem;
+            border: 1px solid #e2e8f0;
+            border-radius: 0.375rem;
+        }
+    </style>
+</head>
+<body class="p-4 sm:p-8">
+    <div class="container mx-auto bg-white shadow-lg rounded-lg p-6 sm:p-8">
+        <h1 class="text-3xl font-bold text-center text-blue-700 mb-6">ลงทะเบียนผู้เข้าร่วม</h1>
+
+        <div class="mb-6 bg-blue-50 p-4 rounded-md shadow-sm">
+            <p id="summaryCount" class="text-lg font-semibold text-blue-800 text-center">กำลังโหลดข้อมูลสรุป...</p>
+            <div class="summary-bar">
+                <div id="summaryBar" class="summary-bar-fill"></div>
+            </div>
+            <p class="text-xs text-gray-500 text-right mt-1">อัปเดตล่าสุด: <span id="latestTime">-</span></p>
+        </div>
+
+        <form id="regForm" class="space-y-4">
+            <div>
+                <label for="empID" class="form-label">รหัสพนักงาน:</label>
+                <input type="text" id="empID" name="empID" class="form-input" required placeholder="กรอกรหัสพนักงานของคุณ">
+            </div>
+            <div>
+                <label for="phone" class="form-label">เบอร์โทรศัพท์:</label>
+                <input type="tel" id="phone" name="phone" class="form-input" required placeholder="สำหรับติดต่อกลับ (เช่น 0812345678)">
+            </div>
+            <div class="text-center">
+                <button type="submit" class="btn-primary">ลงทะเบียน</button>
+            </div>
+        </form>
+
+        <div id="status" class="status-message hidden" role="alert"></div>
+        <div id="assignedTableDisplay" class="status-message success text-center font-bold text-lg hidden" role="alert"></div>
+
+        <div class="text-center mt-6">
+            <button onclick="toggleTable()" class="btn-primary bg-gray-600 hover:bg-gray-700">
+                ดูรายชื่อผู้ลงทะเบียน
+            </button>
+        </div>
+
+        <div id="tableSection" class="hidden mt-6">
+            <h2 class="text-xl font-semibold text-blue-700 mb-4 text-center">รายชื่อผู้ลงทะเบียน</h2>
+            <div class="table-wrapper">
+                <table class="table-auto min-w-full divide-y divide-gray-200">
+                    <thead class="bg-blue-50 sticky top-0">
+                        <tr>
+                            <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                ชื่อ-นามสกุล
+                            </th>
+                            <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                เวลาลงทะเบียน
+                            </th>
+                            <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                โต๊ะ/ที่นั่ง
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody id="nameTable" class="bg-white divide-y divide-gray-200">
+                        <tr><td colspan="3" class="text-center py-2 text-blue-500">กำลังโหลดข้อมูล...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
         // *** สำคัญ: แทนที่ด้วย URL ของ Google Apps Script Web App ล่าสุดของคุณ ***
         const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbyRNJACyL4JE00hIas5n0GYxF_E9t2BolpG7IzsdKnsk-eThp8U3gb2XDZQ4E4Cf5id/exec'; 
         
@@ -58,12 +233,12 @@
             }, 5000); 
         }
 
-        // Helper function สำหรับจัดรูปแบบวันที่/เวลาเป็น พ.ศ.
+        // Helper function สำหรับจัดรูปแบบวันที่/เวลาเป็น พ.ศ. ที่ถูกต้อง
         function formatThaiBuddhistDate(dateString) {
             if (!dateString) return '-';
             const date = new Date(dateString);
             
-            // ใช้ Intl.DateTimeFormat สำหรับ เดือน วัน และเวลา เพื่อความถูกต้องของ locale
+            // ใช้ Intl.DateTimeFormat สำหรับ วันที่ เดือน และเวลา เพื่อความถูกต้องของ locale
             const dateFormatter = new Intl.DateTimeFormat('th-TH', { 
                 day: 'numeric', 
                 month: 'numeric', 
@@ -78,15 +253,23 @@
             const buddhistYear = date.getFullYear() + 543;
 
             // รวมเป็นสตริง "วัน/เดือน/ปี(พ.ศ.) เวลา"
-            return `${formattedDatePart.split(',')[0]}/${buddhistYear} ${formattedDatePart.split(',')[1].trim()}`;
+            // formattedDatePart จะออกมาในรูปแบบ "วัน/เดือน/ปี, เวลา" หรือ "วัน/เดือน เวลา"
+            // เราจะใช้ split เพื่อแยกส่วนวันที่และเวลา แล้วเอาปี พ.ศ. แทรกเข้าไป
+            const parts = formattedDatePart.split(' ');
+            if (parts.length >= 2) {
+                const dateOnly = parts[0].replace(',', ''); // เอา comma ออก
+                const timeOnly = parts.slice(1).join(' ');
+                return `${dateOnly}/${buddhistYear} ${timeOnly}`;
+            }
+            return `${formattedDatePart}/${buddhistYear}`; // Fallback if format is unexpected
         }
 
 
         function updateSummary() {
-            fetch(WEB_APP_URL + '?action=getData')
-    .then(res => {
-        if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
-        return res.json();
+            fetch(WEB_APP_URL + '?action=getData') // เพิ่ม ?action=getData
+                .then(res => {
+                    if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+                    return res.json();
                 })
                 .then(data => {
                     const total = data.list.length;
@@ -117,11 +300,11 @@
 
             const formData = new FormData(form);
             const data = Object.fromEntries(formData.entries());
-            // ส่วนนี้บันทึกวันที่ลงทะเบียนลง Google Sheet ด้วย locale ของ GAS
-            data.timestamp = new Date().toLocaleString('th-TH'); 
+            // Frontend ไม่ต้องสร้าง timestamp แล้ว ให้ Backend (GAS) สร้างเอง
+            // data.timestamp = new Date().toLocaleString('th-TH'); // ลบบรรทัดนี้
             
             try {
-                const res = await fetch(WEB_APP_URL, {
+                const res = await fetch(WEB_APP_URL, { // POST request ไม่ต้องมี ?action=getData
                     method: 'POST',
                     headers: {
                         'Content-Type': 'text/plain;charset=utf-8',
@@ -140,7 +323,7 @@
                     showStatus(result.message, 'success', result.table); 
                     form.reset();
                     updateSummary();
-                    toggleTable(true);
+                    toggleTable(true); // บังคับรีเฟรชตารางหลังจากลงทะเบียนสำเร็จ
                     
                     setTimeout(() => {
                         if (result.firstName && result.lastName && result.table) {
@@ -168,10 +351,10 @@
 
             if (!section.classList.contains("hidden") && (!section.classList.contains("loaded") || forceRefresh)) {
                 nameTable.innerHTML = `<tr><td colspan="3" class="text-center py-2 text-blue-500">กำลังโหลดข้อมูล...</td></tr>`; 
-                fetch(WEB_APP_URL + '?action=getData')
-    .then(res => {
-        if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
-        return res.json();
+                fetch(WEB_APP_URL + '?action=getData') // เพิ่ม ?action=getData
+                    .then(res => {
+                        if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+                        return res.json();
                     })
                     .then(data => {
                         nameTable.innerHTML = "";
@@ -202,3 +385,5 @@
             }
         }
     </script>
+</body>
+</html>
