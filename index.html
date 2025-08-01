@@ -251,7 +251,7 @@
             }
         });
 
-        function toggleTable(forceRefresh = false) {
+        ffunction toggleTable(forceRefresh = false) {
             const section = document.getElementById("tableSection");
             const nameTable = document.getElementById("nameTable");
 
@@ -268,11 +268,13 @@
                         nameTable.innerHTML = "";
                         if (data.list && data.list.length > 0) {
                             data.list.forEach(item => {
+                                // *** แก้ไขบรรทัดนี้: แปลง timestamp ให้อยู่ในรูปแบบที่ต้องการ ***
+                                const displayTime = item.timestamp ? new Date(item.timestamp).toLocaleString("th-TH") : '-';
+
                                 nameTable.innerHTML += `
                                     <tr>
                                         <td class="px-4 py-1 whitespace-nowrap">${item.name || ''}</td>
-                                        <td class="px-4 py-1 whitespace-nowrap">${item.timestamp || ''}</td> 
-                                        <td class="px-4 py-1 whitespace-nowrap">${item.assignedTable || '-'}</td>
+                                        <td class="px-4 py-1 whitespace-nowrap">${displayTime}</td> <td class="px-4 py-1 whitespace-nowrap">${item.assignedTable || '-'}</td>
                                     </tr>
                                 `;
                             });
