@@ -144,6 +144,9 @@
         </div>
     </div>
 
+    <footer class="mt-8 text-center text-gray-500 text-xs">
+        &copy; <span id="currentYear"></span> P้hudit-kat. All rights reserved.
+    </footer>
     <script>
         // *** สำคัญ: แทนที่ด้วย URL ของ Google Apps Script Web App ล่าสุดของคุณ ***
         const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbyRNJACyL4JE00hIas5n0GYxF_E9t2BolpG7IzsdKnsk-eThp8U3gb2XDZQ4E4Cf5id/exec'; 
@@ -204,37 +207,36 @@
             }, 5000); 
         }
 
-        // --- NEW/MODIFIED: Helper function สำหรับจัดรูปแบบวันที่/เวลาเป็น พ.ศ. ที่ถูกต้อง ---
+        // Helper function สำหรับจัดรูปแบบวันที่/เวลาเป็น พ.ศ. ที่ถูกต้อง
         function formatThaiBuddhistDate(isoDateString) {
-  if (!isoDateString) return '-';
-  try {
-    const date = new Date(isoDateString);
-    if (isNaN(date.getTime())) {
-      console.warn("Invalid date string provided to formatThaiBuddhistDate:", isoDateString);
-      return isoDateString;
-    }
+            if (!isoDateString) return '-';
+            try {
+                const date = new Date(isoDateString);
+                if (isNaN(date.getTime())) { // Check if date is valid
+                    console.warn("Invalid date string provided to formatThaiBuddhistDate:", isoDateString);
+                    return isoDateString; // Return original if invalid
+                }
 
-    const options = {
-      year: 'numeric',
-      month: 'numeric',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit',
-      hour12: false
-    };
-
-    return date.toLocaleString('th-TH', options);
-  } catch (error) {
-    console.error("Error formatting date:", error, "Original string:", isoDateString);
-    return isoDateString;
-  }
-}
-        // --- END NEW/MODIFIED ---
+                const options = {
+                    year: 'numeric',
+                    month: 'numeric',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit',
+                    hour12: false, // ใช้รูปแบบ 24 ชั่วโมง
+                    calendar: 'buddhist' // กำหนดให้ใช้ปฏิทินพุทธศักราช
+                };
+                
+                return date.toLocaleString('th-TH', options);
+            } catch (error) {
+                console.error("Error formatting date:", error, "Original string:", isoDateString);
+                return isoDateString; // Fallback to original string on error
+            }
+        }
 
 
         function updateSummary() {
-            // --- MODIFIED: เพิ่ม ?action=getData สำหรับ doGet ใน Apps Script ---
             fetch(WEB_APP_URL + '?action=getData')
                 .then(res => {
                     if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
@@ -244,7 +246,6 @@
                     const total = data.list.length;
                     const max = 71;
                     
-                    // --- MODIFIED: ใช้ formatThaiBuddhistDate สำหรับ latestTime ---
                     const latest = data.list.length > 0 && data.list[0].timestamp 
                                 ? formatThaiBuddhistDate(data.list[0].timestamp) 
                                 : '-'; 
@@ -259,7 +260,11 @@
                 });
         }
 
-        document.addEventListener("DOMContentLoaded", updateSummary);
+        document.addEventListener("DOMContentLoaded", () => {
+            updateSummary();
+            // Set current year for copyright
+            document.getElementById('currentYear').textContent = new Date().getFullYear() + 543; // ปี พ.ศ.
+        });
 
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -269,11 +274,8 @@
 
             const formData = new FormData(form);
             const data = Object.fromEntries(formData.entries());
-            // --- MODIFIED: ลบ data.timestamp ออกจาก frontend ให้ Backend (GAS) สร้างเอง ---
-            // data.timestamp = new Date().toLocaleString('th-TH'); // ลบบรรทัดนี้
             
             try {
-                // POST request ไม่ต้องมี ?action=getData
                 const res = await fetch(WEB_APP_URL, { 
                     method: 'POST',
                     headers: {
@@ -293,7 +295,6 @@
                     showStatus(result.message, 'success', result.table); 
                     form.reset();
                     updateSummary();
-                    // --- MODIFIED: บังคับรีเฟรชตารางหลังจากลงทะเบียนสำเร็จ ---
                     toggleTable(true); 
                     
                     setTimeout(() => {
@@ -320,10 +321,8 @@
 
             section.classList.toggle("hidden");
 
-            // --- MODIFIED: ตรวจสอบ class "loaded" และ forceRefresh เพื่อดึงข้อมูลใหม่ ---
             if (!section.classList.contains("hidden") && (!section.classList.contains("loaded") || forceRefresh)) {
                 nameTable.innerHTML = `<tr><td colspan="3" class="text-center py-2 text-blue-500">กำลังโหลดข้อมูล...</td></tr>`; 
-                // --- MODIFIED: เพิ่ม ?action=getData สำหรับ doGet ใน Apps Script ---
                 fetch(WEB_APP_URL + '?action=getData')
                     .then(res => {
                         if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
@@ -333,7 +332,6 @@
                         nameTable.innerHTML = "";
                         if (data.list && data.list.length > 0) {
                             data.list.forEach(item => {
-                                // --- MODIFIED: ใช้ formatThaiBuddhistDate สำหรับ displayTime ในตาราง ---
                                 const displayTime = formatThaiBuddhistDate(item.timestamp);
 
                                 nameTable.innerHTML += `
@@ -347,14 +345,14 @@
                         } else {
                             nameTable.innerHTML = `<tr><td colspan="3" class="text-center py-2 text-gray-500">ยังไม่มีผู้ลงทะเบียน</td></tr>`; 
                         }
-                        section.classList.add("loaded"); // Mark as loaded
+                        section.classList.add("loaded"); 
                     })
                     .catch(err => {
                         console.error("Failed to load table data:", err);
                         nameTable.innerHTML = `<tr><td colspan="3" class="text-center py-2 text-red-500">❌ โหลดข้อมูลไม่สำเร็จ</td></tr>`; 
                     });
             } else if (section.classList.contains("hidden")) {
-                section.classList.remove("loaded"); // Reset loaded state when hidden
+                section.classList.remove("loaded"); 
             }
         }
     </script>
