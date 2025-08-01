@@ -1,23 +1,26 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
+    <base target="_top">
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>ลงทะเบียนอบรม Omotenashi DNA</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Prompt&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;700&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Prompt', sans-serif; }
         
+        /* Styles for assigned table display */
         .assigned-table-display {
             font-size: 1.25rem;
             font-weight: 700;
-            color: #10B981;
+            color: #10B981; /* Green-500 */
             text-align: center;
             margin-top: 0.5rem;
             padding-bottom: 0.5rem;
         }
         
+        /* Styles for status messages */
         #status {
             padding: 0.5rem;
             border-radius: 0.5rem;
@@ -30,18 +33,19 @@
             opacity: 1;
         }
         #status.success {
-            color: #15803d;
-            background-color: #dcfce7;
+            color: #15803d; /* Green-700 */
+            background-color: #dcfce7; /* Green-100 */
         }
         #status.error {
-            color: #be123c;
-            background-color: #fee2e2;
+            color: #be123c; /* Red-700 */
+            background-color: #fee2e2; /* Red-100 */
         }
         #status.loading {
-            color: #4a5568;
-            background-color: #edf2f7;
+            color: #4a5568; /* Gray-700 */
+            background-color: #edf2f7; /* Gray-100 */
         }
 
+        /* Styles for assignedTableDisplay */
         #assignedTableDisplay {
             display: none;
             opacity: 0;
@@ -49,6 +53,40 @@
         }
         #assignedTableDisplay.visible {
             opacity: 1;
+        }
+
+        /* Summary bar styles */
+        .summary-bar {
+            height: 8px;
+            background-color: #dbeafe; /* blue-100 */
+            border-radius: 9999px; /* rounded-full */
+            overflow: hidden;
+            margin-top: 0.5rem;
+        }
+        .summary-bar-fill {
+            height: 100%;
+            background-color: #3b82f6; /* blue-500 */
+            width: 0%; /* Initial width */
+            border-radius: 9999px;
+            transition: width 0.5s ease-in-out;
+        }
+        /* Table styles */
+        #tableWrapper {
+            max-height: 300px; /* Limit height for scrollable table */
+            overflow-y: auto;
+        }
+        .table-auto {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .table-auto th, .table-auto td {
+            border: 1px solid #e2e8f0; /* border-gray-200 */
+            padding: 8px;
+            text-align: left;
+        }
+        .table-auto th {
+            background-color: #e0f2fe; /* blue-50 */
+            font-weight: 600;
         }
     </style>
 </head>
@@ -121,7 +159,6 @@
                 utterance.lang = 'th-TH'; // กำหนดภาษาเป็นไทย
                 utterance.text = `คุณ${firstName} ${lastName} ลงทะเบียนเรียบร้อยแล้วค่ะ โต๊ะ/ที่นั่งของคุณคือหมายเลข ${table} ค่ะ`;
                 
-                // ลองหาเสียงภาษาไทยที่เหมาะสม
                 const voices = speechSynthesis.getVoices();
                 const thaiVoice = voices.find(voice => voice.lang === 'th-TH');
                 if (thaiVoice) {
@@ -130,19 +167,12 @@
                     console.warn("ไม่พบเสียงภาษาไทย ใช้เสียงเริ่มต้นแทน");
                 }
 
-                // *** สำคัญ: พยายามเล่นเสียง และจัดการกรณีที่เล่นไม่ได้ ***
                 try {
                     speechSynthesis.speak(utterance);
                 } catch (error) {
                     console.error("Error speaking:", error);
-                    // อาจแสดงข้อความแนะนำผู้ใช้เพิ่มเติมที่นี่
-                    // เช่น ถ้าเสียงไม่ดัง ลองเพิ่มเสียงมีเดีย หรือแตะที่หน้าจอ
                     showStatus("เสียงไม่ดัง? กรุณาตรวจสอบปุ่มปรับเสียงของมือถือ หรือแตะที่หน้าจอเพื่อเปิดใช้งานเสียง.", "error");
                 }
-
-                // สำหรับเบราว์เซอร์บางตัวที่อาจต้องรอโหลดเสียงก่อน
-                // utterance.onend = () => { console.log("Speech finished"); };
-                // utterance.onerror = (event) => { console.error("Speech error:", event.error); };
 
             } else {
                 console.warn("เบราว์เซอร์ของคุณไม่รองรับ Speech Synthesis API");
@@ -164,7 +194,6 @@
                 setTimeout(() => { assignedTableDisplay.style.display = 'none'; }, 300); 
             }
 
-            // ข้อความสถานะจะหายไปเอง
             setTimeout(() => {
                 statusDisplay.classList.remove('visible');
                 assignedTableDisplay.classList.remove('visible');
@@ -172,11 +201,44 @@
                     statusDisplay.style.display = 'none'; 
                     assignedTableDisplay.style.display = 'none'; 
                 }, 300);
-            }, 5000); // ข้อความสถานะหายไปใน 5 วินาที
+            }, 5000); 
         }
 
+        // --- NEW/MODIFIED: Helper function สำหรับจัดรูปแบบวันที่/เวลาเป็น พ.ศ. ที่ถูกต้อง ---
+        function formatThaiBuddhistDate(isoDateString) {
+            if (!isoDateString) return '-';
+            try {
+                const date = new Date(isoDateString);
+                if (isNaN(date.getTime())) { // Check if date is valid
+                    console.warn("Invalid date string provided to formatThaiBuddhistDate:", isoDateString);
+                    return isoDateString; // Return original if invalid
+                }
+
+                // ใช้ Intl.DateTimeFormat สำหรับ วันที่ เดือน และเวลา เพื่อความถูกต้องของ locale
+                // ระบุ calendar เป็น 'buddhist' เพื่อให้ปีเป็น พ.ศ.
+                const options = {
+                    year: 'numeric',
+                    month: 'numeric',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit',
+                    hour12: false, // ใช้รูปแบบ 24 ชั่วโมง
+                    calendar: 'buddhist' // กำหนดให้ใช้ปฏิทินพุทธศักราช
+                };
+                
+                return date.toLocaleString('th-TH', options);
+            } catch (error) {
+                console.error("Error formatting date:", error, "Original string:", isoDateString);
+                return isoDateString; // Fallback to original string on error
+            }
+        }
+        // --- END NEW/MODIFIED ---
+
+
         function updateSummary() {
-            fetch(WEB_APP_URL)
+            // --- MODIFIED: เพิ่ม ?action=getData สำหรับ doGet ใน Apps Script ---
+            fetch(WEB_APP_URL + '?action=getData')
                 .then(res => {
                     if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
                     return res.json();
@@ -184,7 +246,11 @@
                 .then(data => {
                     const total = data.list.length;
                     const max = 71;
-                    const latest = data.list.length > 0 ? data.list[0].timestamp : '-'; 
+                    
+                    // --- MODIFIED: ใช้ formatThaiBuddhistDate สำหรับ latestTime ---
+                    const latest = data.list.length > 0 && data.list[0].timestamp 
+                                ? formatThaiBuddhistDate(data.list[0].timestamp) 
+                                : '-'; 
 
                     document.getElementById("summaryCount").textContent = `ลงทะเบียนแล้ว ${total} / ${max} คน`;
                     document.getElementById("summaryBar").style.width = `${(total / max) * 100}%`;
@@ -206,10 +272,12 @@
 
             const formData = new FormData(form);
             const data = Object.fromEntries(formData.entries());
-            data.timestamp = new Date().toLocaleString('th-TH'); 
+            // --- MODIFIED: ลบ data.timestamp ออกจาก frontend ให้ Backend (GAS) สร้างเอง ---
+            // data.timestamp = new Date().toLocaleString('th-TH'); // ลบบรรทัดนี้
             
             try {
-                const res = await fetch(WEB_APP_URL, {
+                // POST request ไม่ต้องมี ?action=getData
+                const res = await fetch(WEB_APP_URL, { 
                     method: 'POST',
                     headers: {
                         'Content-Type': 'text/plain;charset=utf-8',
@@ -225,19 +293,17 @@
                 const result = await res.json();
 
                 if (result.success) {
-                    // แสดงผลบนหน้าจอ
                     showStatus(result.message, 'success', result.table); 
                     form.reset();
                     updateSummary();
-                    toggleTable(true);
+                    // --- MODIFIED: บังคับรีเฟรชตารางหลังจากลงทะเบียนสำเร็จ ---
+                    toggleTable(true); 
                     
-                    // *** เรียกใช้ฟังก์ชันพูดแจ้งเมื่อลงทะเบียนสำเร็จ ***
-                    // ใช้ setTimeout เพื่อให้แน่ใจว่าการแสดงผลบน UI เสร็จสิ้นก่อน
                     setTimeout(() => {
                         if (result.firstName && result.lastName && result.table) {
                             speakConfirmation(result.firstName, result.lastName, result.table);
                         }
-                    }, 100); // หน่วงเวลาเล็กน้อย
+                    }, 100); 
                     
 
                 } else {
@@ -257,9 +323,11 @@
 
             section.classList.toggle("hidden");
 
+            // --- MODIFIED: ตรวจสอบ class "loaded" และ forceRefresh เพื่อดึงข้อมูลใหม่ ---
             if (!section.classList.contains("hidden") && (!section.classList.contains("loaded") || forceRefresh)) {
                 nameTable.innerHTML = `<tr><td colspan="3" class="text-center py-2 text-blue-500">กำลังโหลดข้อมูล...</td></tr>`; 
-                fetch(WEB_APP_URL)
+                // --- MODIFIED: เพิ่ม ?action=getData สำหรับ doGet ใน Apps Script ---
+                fetch(WEB_APP_URL + '?action=getData')
                     .then(res => {
                         if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
                         return res.json();
@@ -268,10 +336,13 @@
                         nameTable.innerHTML = "";
                         if (data.list && data.list.length > 0) {
                             data.list.forEach(item => {
+                                // --- MODIFIED: ใช้ formatThaiBuddhistDate สำหรับ displayTime ในตาราง ---
+                                const displayTime = formatThaiBuddhistDate(item.timestamp);
+
                                 nameTable.innerHTML += `
                                     <tr>
                                         <td class="px-4 py-1 whitespace-nowrap">${item.name || ''}</td>
-                                        <td class="px-4 py-1 whitespace-nowrap">${item.timestamp || ''}</td> 
+                                        <td class="px-4 py-1 whitespace-nowrap">${displayTime}</td> 
                                         <td class="px-4 py-1 whitespace-nowrap">${item.assignedTable || '-'}</td>
                                     </tr>
                                 `;
@@ -279,14 +350,14 @@
                         } else {
                             nameTable.innerHTML = `<tr><td colspan="3" class="text-center py-2 text-gray-500">ยังไม่มีผู้ลงทะเบียน</td></tr>`; 
                         }
-                        section.classList.add("loaded");
+                        section.classList.add("loaded"); // Mark as loaded
                     })
                     .catch(err => {
                         console.error("Failed to load table data:", err);
                         nameTable.innerHTML = `<tr><td colspan="3" class="text-center py-2 text-red-500">❌ โหลดข้อมูลไม่สำเร็จ</td></tr>`; 
                     });
             } else if (section.classList.contains("hidden")) {
-                section.classList.remove("loaded"); 
+                section.classList.remove("loaded"); // Reset loaded state when hidden
             }
         }
     </script>
