@@ -58,29 +58,43 @@
             }, 5000); 
         }
 
+        // Helper function สำหรับจัดรูปแบบวันที่/เวลาเป็น พ.ศ.
+        function formatThaiBuddhistDate(dateString) {
+            if (!dateString) return '-';
+            const date = new Date(dateString);
+            
+            // ใช้ Intl.DateTimeFormat สำหรับ เดือน วัน และเวลา เพื่อความถูกต้องของ locale
+            const dateFormatter = new Intl.DateTimeFormat('th-TH', { 
+                day: 'numeric', 
+                month: 'numeric', 
+                hour: '2-digit', 
+                minute: '2-digit', 
+                second: '2-digit', 
+                hour12: false // ใช้รูปแบบ 24 ชั่วโมง
+            });
+            const formattedDatePart = dateFormatter.format(date);
+
+            // คำนวณปีพุทธศักราชด้วยการบวก 543 จากปีคริสตศักราช
+            const buddhistYear = date.getFullYear() + 543;
+
+            // รวมเป็นสตริง "วัน/เดือน/ปี(พ.ศ.) เวลา"
+            return `${formattedDatePart.split(',')[0]}/${buddhistYear} ${formattedDatePart.split(',')[1].trim()}`;
+        }
+
+
         function updateSummary() {
-            fetch(WEB_APP_URL)
-                .then(res => {
-                    if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
-                    return res.json();
+            fetch(WEB_APP_URL + '?action=getData')
+    .then(res => {
+        if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+        return res.json();
                 })
                 .then(data => {
                     const total = data.list.length;
                     const max = 71;
                     
-                    // กำหนดรูปแบบวันที่และเวลาสำหรับ latestTime ให้เป็นพุทธศักราช
-                    const options = {
-                        year: 'numeric',
-                        month: 'numeric',
-                        day: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit',
-                        second: '2-digit',
-                        hour12: false, 
-                        calendar: 'buddhist' 
-                    };
+                    // ใช้ฟังก์ชัน formatThaiBuddhistDate สำหรับ latestTime
                     const latest = data.list.length > 0 && data.list[0].timestamp 
-                                ? new Date(data.list[0].timestamp).toLocaleString("th-TH", options) 
+                                ? formatThaiBuddhistDate(data.list[0].timestamp) 
                                 : '-'; 
 
                     document.getElementById("summaryCount").textContent = `ลงทะเบียนแล้ว ${total} / ${max} คน`;
@@ -154,29 +168,17 @@
 
             if (!section.classList.contains("hidden") && (!section.classList.contains("loaded") || forceRefresh)) {
                 nameTable.innerHTML = `<tr><td colspan="3" class="text-center py-2 text-blue-500">กำลังโหลดข้อมูล...</td></tr>`; 
-                fetch(WEB_APP_URL)
-                    .then(res => {
-                        if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
-                        return res.json();
+                fetch(WEB_APP_URL + '?action=getData')
+    .then(res => {
+        if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+        return res.json();
                     })
                     .then(data => {
                         nameTable.innerHTML = "";
                         if (data.list && data.list.length > 0) {
-                            // กำหนดรูปแบบวันที่และเวลาให้เป็นภาษาไทย พุทธศักราช
-                            const options = {
-                                year: 'numeric',
-                                month: 'numeric',
-                                day: 'numeric',
-                                hour: '2-digit',
-                                minute: '2-digit',
-                                second: '2-digit',
-                                hour12: false, 
-                                calendar: 'buddhist' 
-                            };
-
                             data.list.forEach(item => {
-                                // แปลง timestamp ให้อยู่ในรูปแบบที่ต้องการ
-                                const displayTime = item.timestamp ? new Date(item.timestamp).toLocaleString("th-TH", options) : '-';
+                                // ใช้ฟังก์ชัน formatThaiBuddhistDate สำหรับ displayTime ในตาราง
+                                const displayTime = formatThaiBuddhistDate(item.timestamp);
 
                                 nameTable.innerHTML += `
                                     <tr>
